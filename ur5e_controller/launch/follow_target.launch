@@ -1,6 +1,7 @@
 <launch>
 
   <node pkg="ur5e_controller" type="camera_marker_publisher.py" name="camera_marker_publisher" output="screen" />
+  <node pkg="ur5e_controller" type="pointcloud2_publisher.py" name="pointcloud2_publisher" output="screen" />
 
   <include file="$(find ur10e_moveit_config)/launch/demo.launch" />
 

@@ -7,6 +7,9 @@ from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Header
 import tf2_ros
 import math
+import tf2_geometry_msgs
+from tf.transformations import quaternion_from_euler
+from moveit_msgs.msg import Constraints, JointConstraint
 
 class UR5eTargetFollower:
     def __init__(self):
@@ -60,19 +63,43 @@ class UR5eTargetFollower:
         except Exception as e:
             rospy.logwarn("TF transform failed: %s", e)
             return
-    
+        
+        task_mode = "grasp"  # or "place"
+
+        if task_mode == "grasp":
+            qx, qy, qz, qw = quaternion_from_euler(0, math.pi, 0)  # 180 deg pitch
+        elif task_mode == "place":
+            qx, qy, qz, qw = quaternion_from_euler(0, 3.14 * 3 / 4, 0)  # ~135 deg pitch
+
+        
+            
         # saftey check
         test_pose = PoseStamped()
         test_pose.header = Header(frame_id="base_link")
-        test_pose.pose = transformed.pose
+        test_pose.pose.position = transformed.pose.position
+        test_pose.pose.orientation.x = qx
+        test_pose.pose.orientation.y = qy
+        test_pose.pose.orientation.z = qz
+        test_pose.pose.orientation.w = qw
 
         self.arm_group.set_pose_target(test_pose)
         #plan = self.arm_group.plan()
         success, plan, _, _ = self.arm_group.plan()
 
+        joint_constraints = Constraints()
+        joint_limit = JointConstraint()
+        joint_limit.joint_name = "shoulder_lift_joint" 
+        joint_limit.position = math.radians(-68)
+        joint_limit.tolerance_above = math.radians(30)
+        joint_limit.tolerance_below = math.radians(17)
+        joint_limit.weight = 1.0
+        joint_constraints.joint_constraints.append(joint_limit)
+
+        self.arm_group.set_path_constraints(joint_constraints)
+
         if success and len(plan.joint_trajectory.points) > 0:
             rospy.loginfo("Target is reachable. Executing...")
-            self.arm_group.go(wait=True)
+            self.arm_group.execute(plan, wait=True)
         else:
             rospy.logwarn("Target is not reachable or planning failed.")
 

@@ -12,9 +12,9 @@ def main():
     static_tf.header.frame_id = "base_link"
     static_tf.child_frame_id = "camera_link"
 
-    static_tf.transform.translation.x = -0.2  # camera is behind by 83.5cm
+    static_tf.transform.translation.x = -0.2  
     static_tf.transform.translation.y = 0.0
-    static_tf.transform.translation.z = 1.35  # camera is 1.35m high
+    static_tf.transform.translation.z = 1.35  
 
     static_tf.transform.rotation.w = 1.0 
 
